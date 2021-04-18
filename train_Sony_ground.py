@@ -168,13 +168,13 @@ for epoch in range(lastepoch, 4001):
         # crop
         input_image = rawpy.imread(in_path)
         gt_image = rawpy.imread(gt_path)
-        H = input_image[str(ratio)[0:3]].shape[1]
-        W = input_image[str(ratio)[0:3]].shape[2]
+        H = input_image.shape[1]
+        W = input_image.shape[2]
 
         xx = np.random.randint(0, W - ps)
         yy = np.random.randint(0, H - ps)
-        input_patch = input_image[str(ratio)[0:3]][:, yy:yy + ps, xx:xx + ps, :]
-        gt_patch = gt_images[ind][:, yy * 2:yy * 2 + ps * 2, xx * 2:xx * 2 + ps * 2, :]
+        input_patch = input_image[:, yy:yy + ps, xx:xx + ps, :]
+        gt_patch = gt_images[:, yy * 2:yy * 2 + ps * 2, xx * 2:xx * 2 + ps * 2, :]
 
         if np.random.randint(2, size=1)[0] == 1:  # random flip
             input_patch = np.flip(input_patch, axis=1)
