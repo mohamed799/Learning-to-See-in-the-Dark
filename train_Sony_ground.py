@@ -156,21 +156,24 @@ for epoch in range(lastepoch, 4001):
         st = time.time()
         cnt += 1
 
-        if input_images[str(ratio)[0:3]][ind] is None:
-            raw = rawpy.imread(in_path)
-            input_images[str(ratio)[0:3]][ind] = np.expand_dims(pack_raw(raw), axis=0) * ratio
+        ## Changes start from here
+        #if input_images[str(ratio)[0:3]][ind] is None:
+        #    raw = rawpy.imread(in_path)
+        #    input_images[str(ratio)[0:3]][ind] = np.expand_dims(pack_raw(raw), axis=0) * ratio
 
-            gt_raw = rawpy.imread(gt_path)
-            im = gt_raw.postprocess(use_camera_wb=True, half_size=False, no_auto_bright=True, output_bps=16)
-            gt_images[ind] = np.expand_dims(np.float32(im / 65535.0), axis=0)
-
+        #    gt_raw = rawpy.imread(gt_path)
+        #    im = gt_raw.postprocess(use_camera_wb=True, half_size=False, no_auto_bright=True, output_bps=16)
+        #    gt_images[ind] = np.expand_dims(np.float32(im / 65535.0), axis=0)
+  
         # crop
-        H = input_images[str(ratio)[0:3]][ind].shape[1]
-        W = input_images[str(ratio)[0:3]][ind].shape[2]
+        input_image = rawpy.imread(in_path)
+        gt_image = rawpy.imread(gt_path)
+        H = input_image[str(ratio)[0:3]].shape[1]
+        W = input_image[str(ratio)[0:3]].shape[2]
 
         xx = np.random.randint(0, W - ps)
         yy = np.random.randint(0, H - ps)
-        input_patch = input_images[str(ratio)[0:3]][ind][:, yy:yy + ps, xx:xx + ps, :]
+        input_patch = input_image[str(ratio)[0:3]][:, yy:yy + ps, xx:xx + ps, :]
         gt_patch = gt_images[ind][:, yy * 2:yy * 2 + ps * 2, xx * 2:xx * 2 + ps * 2, :]
 
         if np.random.randint(2, size=1)[0] == 1:  # random flip
