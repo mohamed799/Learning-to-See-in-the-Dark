@@ -9,13 +9,14 @@ import rawpy
 import glob
 from PIL import Image
 
-input_dir = '/content/Learning-to-See-in-the-Dark/dataset/Sony/short/'
-gt_dir = '/content/Learning-to-See-in-the-Dark/dataset/Sony/long/'
+input_dir = '/content/Learning-to-See-in-the-Dark/dataset_large/Sony/short/'
+gt_dir = '/content/Learning-to-See-in-the-Dark/dataset/gt/'
 checkpoint_dir = '/content/Learning-to-See-in-the-Dark/result_Sony/'
 result_dir = '/content/Learning-to-See-in-the-Dark/result_Sony/'
+train_id_dir = '/content/Learning-to-See-in-the-Dark/dataset_large/Sony/long/'
 
 # get train IDs
-train_fns = glob.glob(gt_dir + '0*.ARW')
+train_fns = glob.glob(train_id_dir + '0*.ARW')
 train_ids = [int(os.path.basename(train_fn)[0:5]) for train_fn in train_fns]
 
 ps = 512  # patch size for training
@@ -146,7 +147,8 @@ for epoch in range(lastepoch, 4001):
         in_path = in_files[np.random.random_integers(0, len(in_files) - 1)]
         in_fn = os.path.basename(in_path)
 
-        gt_files = glob.glob(gt_dir + '%05d_00*.ARW' % train_id)
+        gt_files = glob.glob(gt_dir + '%05d_00*.png' % train_id)
+        print(gt_files)
         gt_path = gt_files[0]
         gt_fn = os.path.basename(gt_path)
         in_exposure = float(in_fn[9:-5])
@@ -166,15 +168,18 @@ for epoch in range(lastepoch, 4001):
         #    gt_images[ind] = np.expand_dims(np.float32(im / 65535.0), axis=0)
   
         # crop
-        input_image = rawpy.imread(in_path)
-        gt_image = rawpy.imread(gt_path)
+        raw = rawpy.imread(in_path)
+        input_image = np.expand_dims(pack_raw(raw), axis=0) * ratio
+
+        im = np.asarray(Image.open(gt_path))
+        my_gt_image = np.expand_dims(np.float32(im / 65535.0), axis=0)
         H = input_image.shape[1]
         W = input_image.shape[2]
 
         xx = np.random.randint(0, W - ps)
         yy = np.random.randint(0, H - ps)
         input_patch = input_image[:, yy:yy + ps, xx:xx + ps, :]
-        gt_patch = gt_images[:, yy * 2:yy * 2 + ps * 2, xx * 2:xx * 2 + ps * 2, :]
+        gt_patch = my_gt_image[:, yy * 2:yy * 2 + ps * 2, xx * 2:xx * 2 + ps * 2, :]
 
         if np.random.randint(2, size=1)[0] == 1:  # random flip
             input_patch = np.flip(input_patch, axis=1)

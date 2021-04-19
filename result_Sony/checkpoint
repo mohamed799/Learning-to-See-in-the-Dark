@@ -1,0 +1,2 @@
+model_checkpoint_path: "/content/Learning-to-See-in-the-Dark/result_Sony/model.ckpt"
+all_model_checkpoint_paths: "/content/Learning-to-See-in-the-Dark/result_Sony/model.ckpt"
