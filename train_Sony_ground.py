@@ -133,8 +133,8 @@ lastepoch = 0
 for folder in allfolders:
     lastepoch = np.maximum(lastepoch, int(folder[-4:]))
 
-learning_rate = 1e-4
-for epoch in range(lastepoch, 4001):
+learning_rate = 2.5e-4
+for epoch in range(lastepoch, 61):
     if os.path.isdir(result_dir + '%04d' % epoch):
         continue
     cnt = 0
