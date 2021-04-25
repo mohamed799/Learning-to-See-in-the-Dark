@@ -7,11 +7,16 @@ import tensorflow.contrib.slim as slim
 import numpy as np
 import rawpy
 import glob
+from PIL import Image
+from skimage.metrics import structural_similarity as ssim
 
-input_dir = './dataset/Sony/short/'
-gt_dir = './dataset/Sony/long/'
-checkpoint_dir = './checkpoint/Sony/'
-result_dir = './result_Sony/'
+
+input_dir = '/content/Learning-to-See-in-the-Dark/dataset_large/Sony/short/'
+gt_dir = '/content/Learning-to-See-in-the-Dark/dataset_large/Sony/long/'
+checkpoint_dir = '/content/Learning-to-See-in-the-Dark/result_Sony/'
+drive_checkpoint_dir = '/content/gdrive/MyDrive/Learning-to-See-in-the-Dark/result_Sony/'
+result_dir = '/content/Learning-to-See-in-the-Dark/result_Sony/'
+train_id_dir = '/content/Learning-to-See-in-the-Dark/dataset_large/Sony/long/'
 
 # get test IDs
 test_fns = glob.glob(gt_dir + '/1*.ARW')
@@ -114,6 +119,7 @@ if not os.path.isdir(result_dir + 'final/'):
 for test_id in test_ids:
     # test the first image in each sequence
     in_files = glob.glob(input_dir + '%05d_00*.ARW' % test_id)
+    avg
     for k in range(len(in_files)):
         in_path = in_files[k]
         in_fn = os.path.basename(in_path)
@@ -147,9 +153,23 @@ for test_id in test_ids:
         scale_full = scale_full * np.mean(gt_full) / np.mean(
             scale_full)  # scale the low-light image to the same mean of the groundtruth
 
-        scipy.misc.toimage(output * 255, high=255, low=0, cmin=0, cmax=255).save(
+        orig255 = util.clip_to_uint8(orig_img)
+        sqerr = np.square(orig255.astype(np.float32) - pred255.astype(np.float32))
+        s = np.sum(sqerr)
+        cur_psnr = 10.0 * np.log10((255*255)/(s / (w*h*3)))
+        avg_psnr += cur_psnr
+        
+
+        print ('Average PSNR: %.2f' % autosummary('PSNR_avg_psnr', avg_psnr))
+
+        Image.fromarray(output * 255, high=255, low=0, cmin=0, cmax=255).save(
             result_dir + 'final/%5d_00_%d_out.png' % (test_id, ratio))
-        scipy.misc.toimage(scale_full * 255, high=255, low=0, cmin=0, cmax=255).save(
+        Image.fromarray(scale_full * 255, high=255, low=0, cmin=0, cmax=255).save(
             result_dir + 'final/%5d_00_%d_scale.png' % (test_id, ratio))
-        scipy.misc.toimage(gt_full * 255, high=255, low=0, cmin=0, cmax=255).save(
+        Image.fromarray(gt_full * 255, high=255, low=0, cmin=0, cmax=255).save(
             result_dir + 'final/%5d_00_%d_gt.png' % (test_id, ratio))
+      avg_psnr /= len(in_files)
+      tot_avg += avg_psnr
+      print ('Average PSNR: %.2f' % autosummary('PSNR_avg_psnr', avg_psnr))
+    print("Final average PSNR: " + str(tot_avg / len(test_ids)))
+
