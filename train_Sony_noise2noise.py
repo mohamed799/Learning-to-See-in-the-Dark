@@ -10,9 +10,9 @@ import glob
 from PIL import Image
 
 input_dir = '/content/Learning-to-See-in-the-Dark/dataset_large/Sony/short/'
-gt_dir = '/content/Learning-to-See-in-the-Dark/dataset/gt/'
+gt_dir = '/content/Learning-to-See-in-the-Dark/dataset_large/Sony/long/'
 checkpoint_dir = '/content/Learning-to-See-in-the-Dark/result_Sony/'
-drive_checkpoint_dir = '/content/gdrive/mydrive/Learning-to-See-in-the-Dark/result_Sony/'
+drive_checkpoint_dir = '/content/gdrive/MyDrive/Learning-to-See-in-the-Dark/result_Sony/'
 result_dir = '/content/Learning-to-See-in-the-Dark/result_Sony/'
 train_id_dir = '/content/Learning-to-See-in-the-Dark/dataset_large/Sony/long/'
 
@@ -101,6 +101,9 @@ def pack_raw(raw):
                           im[1:H:2, 0:W:2, :]), axis=2)
     return out
 
+def generate_ratios():
+  return np.random.randint(50, 400, size=2)
+  
 sess = tf.Session()
 in_image = tf.placeholder(tf.float32, [None, None, None, 4])
 gt_image = tf.placeholder(tf.float32, [None, None, None, 3])
@@ -140,18 +143,26 @@ for folder in allfolders:
 learning_rate = 1e-4
 count = 0
 
-for epoch in range(lastepoch, 200):
+for epoch in range(lastepoch, 250):
     if os.path.isdir(result_dir + '%04d' % epoch):
         continue
     cnt = 0
     if epoch > 2000:
         learning_rate = 1e-5
+    
     for ind in np.random.permutation(len(train_ids)):
         # get the path from image id
         train_id = train_ids[ind]
         in_files = glob.glob(input_dir + '%05d_00*.ARW' % train_id)
-        in_path = in_files[np.random.random_integers(0, len(in_files) - 1)]
+        in_path = in_files[np.random.randint(0, len(in_files))]
         in_fn = os.path.basename(in_path)
+
+        gt_files = glob.glob(gt_dir + '%05d_00*.ARW' % train_id)
+        gt_path = gt_files[0]
+        gt_fn = os.path.basename(gt_path)
+        in_exposure = float(in_fn[9:-5])
+        gt_exposure = float(gt_fn[9:-5])
+        ratio = min(gt_exposure / in_exposure, 300)
 
         st = time.time()
         cnt += 1
@@ -159,7 +170,7 @@ for epoch in range(lastepoch, 200):
         # Getting ratios
         noisy_ratio = 0
         input_ratio = 0
-        ratio1, ratio2 = self.generate_ratios()
+        ratio1, ratio2 = generate_ratios()
         if(ratio1 > ratio2):
             noisy_ratio = ratio1
             input_ratio = ratio2
@@ -174,7 +185,7 @@ for epoch in range(lastepoch, 200):
         if input_images[str(ratio)[0:3]][ind] is None:
           raw = rawpy.imread(in_path)
           im = raw.postprocess(use_camera_wb=True, half_size=False, no_auto_bright=True, output_bps=16)
-          if(input_count <= 40):
+          if(count <= 40):
             input_images[str(ratio)[0:3]][ind] = np.expand_dims(pack_raw(raw), axis=0)
             noisy_images[str(ratio)[0:3]][ind] = np.expand_dims(np.float32(im / 65535.0), axis=0)
             input_image = input_images[str(ratio)[0:3]][ind]
@@ -188,7 +199,7 @@ for epoch in range(lastepoch, 200):
             noisy_image = noisy_images[str(ratio)[0:3]][ind]
         
         input_image = input_image * input_ratio
-        noisy_image = noisy_image * noisy_image
+        noisy_image = noisy_image * noisy_ratio
 
         H = input_image.shape[1]
         W = input_image.shape[2]
