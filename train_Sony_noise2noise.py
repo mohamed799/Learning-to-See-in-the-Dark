@@ -101,6 +101,12 @@ def pack_raw(raw):
                           im[1:H:2, 0:W:2, :]), axis=2)
     return out
 
+def preprocess_ref_img(raw):
+    im = raw.raw_image_visible.astype(np.float32)
+    im = np.maximum(im - 512, 0) / (16383 - 512)  # subtract the black level
+    rgb = im.postprocess(gamma=(1,1), no_auto_bright=True, output_bps=16)
+    return rgb
+
 def generate_ratios():
   return np.random.randint(50, 400, size=2)
   
@@ -143,7 +149,7 @@ for folder in allfolders:
 learning_rate = 1e-4
 count = 0
 
-for epoch in range(lastepoch, 250):
+for epoch in range(lastepoch, 226):
     if os.path.isdir(result_dir + '%04d' % epoch):
         continue
     cnt = 0
@@ -170,30 +176,23 @@ for epoch in range(lastepoch, 250):
         # Getting ratios
         noisy_ratio = 0
         input_ratio = 0
-        ratio1, ratio2 = generate_ratios()
-        if(ratio1 > ratio2):
-            noisy_ratio = ratio1
-            input_ratio = ratio2
-        else:
-            noisy_ratio = ratio2
-            input_ratio = ratio1
-    
+        noisy_ratio, input_ratio = generate_ratios()
+
         # Reading each image
         input_image = []
         noisy_image = []
 
         if input_images[str(ratio)[0:3]][ind] is None:
           raw = rawpy.imread(in_path)
-          im = raw.postprocess(use_camera_wb=True, half_size=False, no_auto_bright=True, output_bps=16)
-          if(count <= 40):
+          if(count <= 100):
             input_images[str(ratio)[0:3]][ind] = np.expand_dims(pack_raw(raw), axis=0)
-            noisy_images[str(ratio)[0:3]][ind] = np.expand_dims(np.float32(im / 65535.0), axis=0)
+            noisy_images[str(ratio)[0:3]][ind] = preprocess_ref_img(raw)
             input_image = input_images[str(ratio)[0:3]][ind]
             noisy_image = noisy_images[str(ratio)[0:3]][ind]
             count = count + 1
           else:
             input_image = np.expand_dims(pack_raw(raw), axis=0)
-            noisy_image = np.expand_dims(np.float32(im / 65535.0), axis=0)
+            noisy_image = preprocess_ref_img(raw)
         else:
             input_image = input_images[str(ratio)[0:3]][ind]
             noisy_image = noisy_images[str(ratio)[0:3]][ind]
