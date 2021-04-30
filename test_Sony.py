@@ -164,20 +164,27 @@ for test_id in test_ids:
         
         avg_psnr[str(ratio)[0:3]] += psnr(gt_full, output)
         avg_ssim[str(ratio)[0:3]] += ssim(gt_full, output)        
-        Image.fromarray(output * 255, high=255, low=0, cmin=0, cmax=255).save(
+        Image.fromarray((output * 255).astype('uint8')).save(
             result_dir + 'final/%5d_00_%d_out.png' % (test_id, ratio))
-        Image.fromarray(scale_full * 255, high=255, low=0, cmin=0, cmax=255).save(
+        Image.fromarray((scale_full * 255).astype('uint8')).save(
             result_dir + 'final/%5d_00_%d_scale.png' % (test_id, ratio))
-        Image.fromarray(gt_full * 255, high=255, low=0, cmin=0, cmax=255).save(
+        Image.fromarray((gt_full * 255).astype('uint8')).save(
             result_dir + 'final/%5d_00_%d_gt.png' % (test_id, ratio))
 
       avg_psnr[str(previous_ratio)[0:3]] /= len(in_files)
-      tot_avg[str(previous_ratio)[0:3]] += avg_psnr
-      tot_SSIM[str(previous_ratio)[0:3]] += avg_SSIM
-      print ('Average PSNR: %.2f' % autosummary('PSNR_avg_psnr', avg_psnr))
-      print ('Average SSIM: %.2f' % autosummary('SSIM_avg_SSIM', avg_SSIM))
+      avg_SSIM[str(previous_ratio)[0:3]] /= len(in_files)
+      tot_avg[str(previous_ratio)[0:3]] += avg_psnr[str(previous_ratio)[0:3]]
+      tot_SSIM[str(previous_ratio)[0:3]] += avg_SSIM[str(previous_ratio)[0:3]]
+      print ('Average PSNR: ' + str(avg_psnr[str(previous_ratio)[0:3]])
+      print ('Average SSIM: ' + str(avg_SSIM[str(previous_ratio)[0:3]])
   
     print("Final average PSNR: ")
+    tot_psnr['100'] /= len(test_ids)
+    tot_psnr['250'] /= len(test_ids)
+    tot_psnr['300'] /= len(test_ids)
+    tot_SSIM['100'] /= len(test_ids)
+    tot_SSIM['250'] /= len(test_ids)
+    tot_SSIM['300'] /= len(test_ids)
     print(tot_psnr)
     print("Final average SSIM: ")
     print(tot_SSIM)
